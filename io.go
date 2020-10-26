@@ -20,9 +20,14 @@ func download(url string) (int64, error) {
 
 	batches := batch(contentLength, batchSize)
 	fileName := extractFileName(url)
+	ch := make(chan string, len(batches))
 
 	for i, batch := range batches {
-		downloadBatch(url, batchSize, batch[0], batch[1], fmt.Sprintf("%s-%d", fileName, i))
+		go downloadBatch(url, batchSize, batch[0], batch[1], fmt.Sprintf("%s-%d", fileName, i), ch)
+	}
+
+	for i := 0; i < len(batches); i++ {
+		fmt.Println(<-ch)
 	}
 
 	return 1, nil
@@ -36,7 +41,7 @@ func contentLength(url string) (int64, error) {
 	}
 	return res.ContentLength, nil
 }
-func downloadBatch(url string, size int, start int64, end int64, fileName string) (int64, error) {
+func downloadBatch(url string, size int, start int64, end int64, fileName string, s chan string) (int64, error) {
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", url, nil)
 
@@ -44,7 +49,6 @@ func downloadBatch(url string, size int, start int64, end int64, fileName string
 		return -1, err
 	}
 	req.Header.Set("range", fmt.Sprintf("bytes=%d-%d", start, end))
-
 	res, err := client.Do(req)
 	if err != nil {
 		return -1, err
@@ -53,7 +57,7 @@ func downloadBatch(url string, size int, start int64, end int64, fileName string
 	defer res.Body.Close()
 
 	writeToFile(res.Body, fileName, size)
-
+	s <- fileName
 	return int64(size), nil
 }
 
