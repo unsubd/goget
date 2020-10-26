@@ -9,24 +9,32 @@ import (
 )
 
 func download(url string) (int64, error) {
+	size := 10 * 1000 * 1000 // 10 MB
+	return downloadBatch(url, size, 0, 9223372036854775807, extractFileName(url), 0)
+}
 
-	res, err := http.Get(url)
+func downloadBatch(url string, size int, start int64, end int64, fileName string, index int) (int64, error) {
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", url, nil)
 
 	if err != nil {
 		return -1, err
 	}
-	defer res.Body.Close()
-	writeToFile(res.Body, extractFileName(url), res.ContentLength)
+	req.Header.Set("range", fmt.Sprintf("bytes=%d-%d", start, end))
 
-	return res.ContentLength, nil
-}
-
-func writeToFile(body io.ReadCloser, fileName string, contentLength int64) {
-	len := contentLength
-	if len < 0 {
-		len = 9223372036854775807
+	res, err := client.Do(req)
+	if err != nil {
+		return -1, err
 	}
 
+	defer res.Body.Close()
+
+	writeToFile(res.Body, fileName, size)
+
+	return int64(size), nil
+}
+
+func writeToFile(body io.ReadCloser, fileName string, size int) {
 	file, err := os.Create(fileName)
 	if err != nil {
 		fmt.Println(err)
@@ -35,10 +43,9 @@ func writeToFile(body io.ReadCloser, fileName string, contentLength int64) {
 
 	writer := bufio.NewWriter(file)
 	defer writer.Flush()
-	const limit = 10 * 1000 * 1000 // 10 MB
 
 	for true {
-		bytes := make([]byte, limit)
+		bytes := make([]byte, size)
 		read, err := body.Read(bytes)
 
 		bytes = bytes[:read]
@@ -47,6 +54,5 @@ func writeToFile(body io.ReadCloser, fileName string, contentLength int64) {
 		if err != nil || read == 0 {
 			break
 		}
-		len -= limit
 	}
 }
