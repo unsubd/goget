@@ -9,11 +9,34 @@ import (
 )
 
 func download(url string) (int64, error) {
-	size := 10 * 1000 * 1000 // 10 MB
-	return downloadBatch(url, size, 0, 9223372036854775807, extractFileName(url), 0)
+	const batchSize = 10 * 1000 * 1000 // 10 MB
+	contentLength, err := contentLength(url)
+	if err != nil {
+		return 0, err
+	}
+	if contentLength == -1 {
+		contentLength = 9223372036854775807
+	}
+
+	batches := batch(contentLength, batchSize)
+	fileName := extractFileName(url)
+
+	for i, batch := range batches {
+		downloadBatch(url, batchSize, batch[0], batch[1], fmt.Sprintf("%s-%d", fileName, i))
+	}
+
+	return 1, nil
 }
 
-func downloadBatch(url string, size int, start int64, end int64, fileName string, index int) (int64, error) {
+func contentLength(url string) (int64, error) {
+	res, err := http.Head(url)
+
+	if err != nil {
+		return -1, err
+	}
+	return res.ContentLength, nil
+}
+func downloadBatch(url string, size int, start int64, end int64, fileName string) (int64, error) {
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", url, nil)
 

@@ -1,7 +1,31 @@
 package main
 
-import "strings"
+import (
+	"strings"
+)
 
 func extractFileName(url string) string {
 	return url[strings.LastIndex(url, "/")+1:]
+}
+
+func batch(limit int64, size int64) [][]int64 {
+	if size >= limit {
+		return [][]int64{{0, limit}}
+	}
+
+	var batches [][]int64
+
+	start := int64(0)
+	end := size
+
+	for true {
+		batches = append(batches, []int64{start, end})
+		start += size + 1
+		end = start + size
+		if start > limit {
+			break
+		}
+	}
+
+	return batches
 }

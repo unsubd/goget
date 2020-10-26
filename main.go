@@ -14,4 +14,6 @@ func main() {
 	}
 
 	fmt.Println(checksum)
+
+	//fmt.Println(batch(100,191))
 }
