@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"github.com/google/uuid"
 	"io"
 	"net/http"
 	"os"
@@ -22,9 +23,10 @@ func download(url string) (int64, error) {
 	batches := batch(contentLength, batchSize)
 	fileName := extractFileName(url)
 	ch := make(chan string, len(batches))
-
-	for i, batch := range batches {
-		go downloadBatch(url, batchSize, batch[0], batch[1], fmt.Sprintf("%s-%d", fileName, i), ch)
+	temp := os.TempDir()
+	uuid := uuid.New().String()
+	for _, batch := range batches {
+		go downloadBatch(url, batchSize, batch[0], batch[1], fmt.Sprintf("%s%s-%s", temp, fileName, uuid), ch)
 	}
 
 	var parts []string
