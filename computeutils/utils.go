@@ -1,14 +1,14 @@
-package main
+package computeutils
 
 import (
 	"strings"
 )
 
-func extractFileName(url string) string {
+func FileNameFromUrl(url string) string {
 	return url[strings.LastIndex(url, "/")+1:]
 }
 
-func batch(limit int64, size int64) [][]int64 {
+func CreateBatches(limit int64, size int64) [][]int64 {
 	if size >= limit {
 		return [][]int64{{0, limit}}
 	}

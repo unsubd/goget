@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
+	"rip/computeutils"
+	"rip/cryptoutils"
 )
 
 func main() {
@@ -11,7 +13,7 @@ func main() {
 	if err != nil {
 		fmt.Println(err.Error())
 	}
-	checksum, err := checksum(extractFileName(url))
+	checksum, err := cryptoutils.FileChecksumSHA256(computeutils.FileNameFromUrl(url))
 	if err != nil {
 		fmt.Println(err)
 	}
