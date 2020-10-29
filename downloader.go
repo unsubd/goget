@@ -3,11 +3,11 @@ package main
 import (
 	"fmt"
 	"github.com/google/uuid"
+	"goget/computeutils"
+	"goget/ioutils"
 	"io"
 	"net/http"
 	"os"
-	"rip/computeutils"
-	"rip/ioutils"
 	"sort"
 )
 

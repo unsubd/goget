@@ -1,4 +1,4 @@
-module rip
+module goget
 
 go 1.15
 

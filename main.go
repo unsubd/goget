@@ -2,10 +2,10 @@ package main
 
 import (
 	"fmt"
+	"goget/computeutils"
+	"goget/cryptoutils"
 	"log"
 	"os"
-	"rip/computeutils"
-	"rip/cryptoutils"
 )
 
 func main() {
