@@ -1,9 +1,12 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"os"
+)
 
 func main() {
-	url := "https://raw.githubusercontent.com/unsubd/geektrust-family/master/input.txt"
+	url := os.Args[1]
 	_, err := download(url)
 	if err != nil {
 		fmt.Println(err.Error())
@@ -14,6 +17,4 @@ func main() {
 	}
 
 	fmt.Println(checksum)
-
-	//fmt.Println(batch(100,191))
 }
