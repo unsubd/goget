@@ -3,7 +3,9 @@ package ioutils
 import (
 	"bufio"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"strings"
 )
 
 func WriteToFile(bytes []byte, fileName string) {
@@ -39,4 +41,32 @@ func AppendToFile(partialFilePath string, finalFilePath string, size int) error 
 	}
 
 	return nil
+}
+
+func GetTotalFileSize(pattern string, directoryPath string) (int64, error) {
+	var size int64
+	files, err := ioutil.ReadDir(directoryPath)
+
+	if err != nil {
+		return -1, err
+	}
+
+	var fileNames []string
+
+	for _, file := range files {
+		fileName := file.Name()
+		if strings.Contains(fileName, pattern) {
+			fileNames = append(fileNames, fileName)
+		}
+	}
+
+	for _, fileName := range fileNames {
+		stat, err := os.Stat(fmt.Sprintf("%s%s", directoryPath, fileName))
+		if err != nil {
+			return -1, err
+		}
+		size += stat.Size()
+	}
+
+	return size, nil
 }

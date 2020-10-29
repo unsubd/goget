@@ -20,7 +20,7 @@ func CreateBatches(limit int64, size int64) [][]int64 {
 
 	for true {
 		batches = append(batches, []int64{start, end})
-		start += size
+		start += size + 1
 		end = start + size
 		if start > limit {
 			break

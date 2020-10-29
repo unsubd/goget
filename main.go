@@ -10,7 +10,7 @@ import (
 
 func main() {
 	url := os.Args[1]
-	_, err := download(url)
+	_, err := downloadFile(url)
 	if err != nil {
 		fmt.Println(err.Error())
 	}
