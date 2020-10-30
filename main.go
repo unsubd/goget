@@ -23,8 +23,14 @@ func main() {
 	log.SetOutput(logFile)
 	var size int64
 	flag.Int64Var(&size, "m", 500, "MegaBytes of size to allocate for download")
+
+	var url string
+	flag.StringVar(&url, "url", "", "URL to download")
 	flag.Parse()
-	url := flag.Args()[0]
+	if url == "" {
+		fmt.Println("URL CANNOT BE EMPTY")
+		log.Fatal("URL CANNOT BE EMPTY")
+	}
 	_, err := downloadFile(url, size*constants.MegaByte)
 	if err != nil {
 		fmt.Printf("MAIN ERROR DOWNLOADING FILE: %v", err)
