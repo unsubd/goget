@@ -47,10 +47,11 @@ func downloadFile(url string, limit constants.Size) (int64, error) {
 	for i := 0; i < len(batches); i++ {
 		part := <-ch
 		if strings.Contains(part, "ERROR") {
-			trackingChannel <- 1
 			break
 		}
 	}
+
+	trackingChannel <- 1
 
 	for i := 0; i < len(batches); i++ {
 		err := ioutils.AppendToFile(fmt.Sprintf("%s-%d", baseFileName, i), fileName, batchSize)
