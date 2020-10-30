@@ -3,6 +3,7 @@ package ioutils
 import (
 	"bufio"
 	"fmt"
+	"goget/constants"
 	"goget/logging"
 	"io/ioutil"
 	"os"
@@ -21,7 +22,7 @@ func WriteToFile(bytes []byte, fileName string) {
 	writer.Write(bytes)
 }
 
-func AppendToFile(partialFilePath string, finalFilePath string, size int) error {
+func AppendToFile(partialFilePath string, finalFilePath string, size constants.Size) error {
 	file, err := os.Open(partialFilePath)
 	logging.LogDebug("APPEND_TO_FILE CALLED", partialFilePath)
 	if err != nil {
