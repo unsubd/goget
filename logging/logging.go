@@ -9,7 +9,7 @@ func LogInfo(v ...interface{}) {
 	printLn(fmt.Sprintf("INFO: %v", v))
 }
 func LogDebug(v ...interface{}) {
-	printLn(fmt.Sprintf("DEBUT: %v", v))
+	printLn(fmt.Sprintf("DEBUG: %v", v))
 }
 func LogError(v ...interface{}) {
 	printLn(fmt.Sprintf("ERROR: %v", v))
