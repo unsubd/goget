@@ -9,7 +9,6 @@ import (
 	"goget/logging"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"strings"
 	"sync/atomic"
@@ -32,16 +31,17 @@ func downloadFile(url string, limit constants.Size) (int64, error) {
 	temp := ioutils.GetTempDir()
 	uniqueId := uuid.New().String()
 	logging.LogDebug("UUID", uniqueId, url)
-	fmt.Println("UUID", uniqueId)
+	logging.ConsoleOut("UUID", uniqueId)
 	baseFileName := fmt.Sprintf("%s%s-%s", temp, fileName, uniqueId)
 
 	dispatchBatches(url, batches, baseFileName, ch, fileName, uniqueId, int(limit/batchSize))
-	trackingChannel := computeutils.Track(uniqueId, temp)
+	trackingChannel, stopChannel := computeutils.Track(uniqueId, temp)
 
 	go func() {
 		for i := range trackingChannel {
-			logging.LogDebug(fmt.Sprintf("DOWNLOAD_STATUS %s %s : %f Done\n", fileName, uniqueId, float64(i)*100/float64(contentLength)))
+			logging.ConsoleOut(fmt.Sprintf("DOWNLOAD_STATUS %s %s : %f Done", fileName, uniqueId, float64(i)*100/float64(contentLength)))
 		}
+		logging.ConsoleOut(fmt.Sprintf("DOWNLOAD COMPLETE: %s Merging!", fileName))
 	}()
 
 	for i := 0; i < len(batches); i++ {
@@ -51,13 +51,12 @@ func downloadFile(url string, limit constants.Size) (int64, error) {
 		}
 	}
 
-	trackingChannel <- 1
+	stopChannel <- true
 
 	for i := 0; i < len(batches); i++ {
 		err := ioutils.AppendToFile(fmt.Sprintf("%s-%d", baseFileName, i), fileName, batchSize)
 		if err != nil {
 			logging.LogError("APPEND_TO_FILE", err, fileName, baseFileName)
-			log.Println(err.Error())
 		}
 	}
 

@@ -6,6 +6,7 @@ import (
 	"goget/computeutils"
 	"goget/constants"
 	"goget/cryptoutils"
+	"goget/logging"
 	"log"
 	"os"
 )
@@ -28,12 +29,12 @@ func main() {
 	flag.StringVar(&url, "url", "", "URL to download")
 	flag.Parse()
 	if url == "" {
-		fmt.Println("URL CANNOT BE EMPTY")
+		logging.ConsoleOut("URL CANNOT BE EMPTY")
 		log.Fatal("URL CANNOT BE EMPTY")
 	}
 	_, err := downloadFile(url, size*constants.MegaByte)
 	if err != nil {
-		fmt.Printf("MAIN ERROR DOWNLOADING FILE: %v", err)
+		logging.ConsoleOut(fmt.Sprintf("MAIN ERROR DOWNLOADING FILE: %v", err))
 	}
 	fileName := computeutils.FileNameFromUrl(url)
 	checksum, err := cryptoutils.FileChecksumSHA256(fileName)

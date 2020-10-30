@@ -15,6 +15,9 @@ func LogError(v ...interface{}) {
 	printLn(fmt.Sprintf("ERROR: %v", v))
 }
 
+func ConsoleOut(v ...interface{}) {
+	fmt.Println(v)
+}
 func printLn(message string) {
 	log.Println(message)
 }

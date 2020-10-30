@@ -6,8 +6,9 @@ import (
 	"time"
 )
 
-func Track(uniqueId string, directoryPath string) chan int64 {
+func Track(uniqueId string, directoryPath string) (chan int64, chan bool) {
 	ch := make(chan int64)
+	stopChannel := make(chan bool)
 	logging.LogDebug("TRACKING", uniqueId)
 	go func() {
 		for true {
@@ -17,9 +18,10 @@ func Track(uniqueId string, directoryPath string) chan int64 {
 				return
 			}
 			select {
-			case stop := <-ch:
-				if stop == 1 {
+			case stop := <-stopChannel:
+				if stop {
 					close(ch)
+					close(stopChannel)
 					return
 				}
 			case ch <- size:
@@ -28,5 +30,5 @@ func Track(uniqueId string, directoryPath string) chan int64 {
 		}
 	}()
 
-	return ch
+	return ch, stopChannel
 }
