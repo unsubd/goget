@@ -83,3 +83,12 @@ func GetTotalFileSize(pattern string, directoryPath string) (int64, error) {
 
 	return size, nil
 }
+
+func GetTempDir() string {
+	temp := os.TempDir()
+	if !strings.HasSuffix(temp, "/") {
+		temp = temp + "/"
+	}
+
+	return temp
+}

@@ -11,7 +11,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
 	"strings"
 	"sync/atomic"
 )
@@ -30,7 +29,7 @@ func downloadFile(url string, limit constants.Size) (int64, error) {
 	fileName := computeutils.FileNameFromUrl(url)
 	logging.LogDebug("FILE_NAME", fileName, url)
 	ch := make(chan string, len(batches))
-	temp := os.TempDir()
+	temp := ioutils.GetTempDir()
 	uniqueId := uuid.New().String()
 	logging.LogDebug("UUID", uniqueId, url)
 	fmt.Println("UUID", uniqueId)
