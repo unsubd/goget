@@ -20,6 +20,7 @@ func Track(uniqueId string, directoryPath string) (chan int64, chan bool) {
 			select {
 			case stop := <-stopChannel:
 				if stop {
+					logging.LogDebug("STOP_TRACKING", uniqueId)
 					close(ch)
 					close(stopChannel)
 					return
