@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"goget/computeutils"
 	"goget/constants"
@@ -20,9 +21,11 @@ func main() {
 	}
 
 	log.SetOutput(logFile)
-
-	url := os.Args[1]
-	_, err := downloadFile(url, 500*constants.MegaByte)
+	var size int64
+	flag.Int64Var(&size, "m", 500, "MegaBytes of size to allocate for download")
+	flag.Parse()
+	url := flag.Args()[0]
+	_, err := downloadFile(url, size*constants.MegaByte)
 	if err != nil {
 		fmt.Printf("MAIN ERROR DOWNLOADING FILE: %v", err)
 	}
