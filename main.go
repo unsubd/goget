@@ -33,7 +33,6 @@ func main() {
 		log.Fatal("URL CANNOT BE EMPTY")
 	}
 	trackingChannel, uniqueId, contentLength, fileName, err := DownloadFile(url, size*constants.MegaByte)
-	logging.ConsoleOut(uniqueId, contentLength, fileName, err)
 	ioutils.PrintTrack(trackingChannel, uniqueId, fileName, contentLength)
 	if err != nil {
 		logging.ConsoleOut(fmt.Sprintf("MAIN ERROR DOWNLOADING FILE: %v", err))
