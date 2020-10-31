@@ -14,22 +14,24 @@ import (
 	"sync/atomic"
 )
 
-func downloadFile(url string, limit constants.Size) (int64, error) {
+func DownloadFile(url string, limit constants.Size) (string, error) {
 	const batchSize = 10 * constants.MegaByte // 10 MB
 	logging.LogDebug("DOWNLOAD STARTING FOR", url)
 	contentLength, err := ioutils.RemoteFileSize(url)
 	logging.LogDebug("CONTENT_LENGTH", fmt.Sprintf("bytes %v", contentLength), fmt.Sprintf("mb %v", contentLength/(1000*1000)))
 	if err != nil {
-		return -1, err
+		return "", err
 	}
 
 	batches := computeutils.CreateBatches(contentLength, batchSize)
 	logging.LogDebug("BATCH_COUNT", len(batches), url)
 	fileName := computeutils.FileNameFromUrl(url)
 	logging.LogDebug("FILE_NAME", fileName, url)
+
 	ch := make(chan string, len(batches))
 	temp := ioutils.GetTempDir()
 	uniqueId := uuid.New().String()
+
 	logging.LogDebug("UUID", uniqueId, url)
 	logging.ConsoleOut("UUID", uniqueId)
 	baseFileName := fmt.Sprintf("%s%s-%s", temp, fileName, uniqueId)
@@ -44,8 +46,7 @@ func downloadFile(url string, limit constants.Size) (int64, error) {
 		logging.ConsoleOut(fmt.Sprintf("DOWNLOAD COMPLETE: %s Merging!", fileName))
 	}()
 
-	for i := 0; i < len(batches); i++ {
-		part := <-ch
+	for part := range ch {
 		if strings.Contains(part, "ERROR") {
 			break
 		}
@@ -61,7 +62,7 @@ func downloadFile(url string, limit constants.Size) (int64, error) {
 	}
 
 	logging.LogDebug("DOWNLOAD_COMPLETE", url, uniqueId)
-	return 1, nil
+	return fileName, nil
 }
 
 func dispatchBatches(url string, batches [][]int64, baseFileName string, response chan string, fileName string, uniqueId string, limit int) {
@@ -78,6 +79,7 @@ func dispatchBatches(url string, batches [][]int64, baseFileName string, respons
 	go func() {
 		defer close(response)
 		defer close(dispatchChannel)
+	loop:
 		for true {
 			select {
 			case filePart := <-dispatchChannel:
@@ -90,7 +92,7 @@ func dispatchBatches(url string, batches [][]int64, baseFileName string, respons
 				atomic.AddInt32(&receiveCount, 1)
 				if receiveCount >= int32(len(batches)) || strings.Contains(filePart, "ERROR") {
 					logging.LogDebug("DISPATCH_DONE", uniqueId)
-					break
+					break loop
 				}
 			}
 		}
@@ -103,7 +105,7 @@ func dispatch(url string, baseFileName string, index int, start int64, end int64
 	go func() {
 		logging.LogDebug("DISPATCHING", index, baseFileName)
 		filePartName := fmt.Sprintf("%s-%d", baseFileName, index)
-		err := downloadFilePart(url, start, end, filePartName)
+		err := downloadPartialFile(url, start, end, filePartName)
 		if err != nil {
 			logging.LogError("DOWNLOADING_PART", err, filePartName)
 			response <- fmt.Sprintf("%s-ERROR-%s", fileName, err.Error())
@@ -114,7 +116,7 @@ func dispatch(url string, baseFileName string, index int, start int64, end int64
 	}()
 }
 
-func downloadFilePart(url string, start int64, end int64, fileName string) error {
+func downloadPartialFile(url string, start int64, end int64, fileName string) error {
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", url, nil)
 
