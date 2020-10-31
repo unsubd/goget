@@ -7,7 +7,8 @@ Usage:
 
 `$ go build goget`
 
-`$ ./goget https://raw.githubusercontent.com/unsubd/geektrust-family/master/input.txt`
+`$ ./goget -m=100 -url=https://raw.githubusercontent.com/unsubd/geektrust-family/master/input.txt`
+`This would run goget with 100 MB reserved for downloading objects`
 
 TODO:
 
