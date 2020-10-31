@@ -64,11 +64,12 @@ func DownloadFile(url string, limit constants.Size) (chan int64, string, int64, 
 func dispatchBatches(url string, batches [][]int64, baseFileName string, response chan string, fileName string, uniqueId string, limit int) {
 	dispatchChannel := make(chan string)
 	logging.LogDebug("DISPATCH", fmt.Sprintf("LIMIT=%v", limit), uniqueId)
-	for count := 0; count < limit; count++ {
+	count := 0
+	for ; count < limit && count < len(batches); count++ {
 		dispatch(url, baseFileName, count, batches[count][0], batches[count][1], dispatchChannel, fileName)
 	}
 
-	index := int32(limit)
+	index := int32(count)
 	logging.LogDebug("DISPATCH_PARTIAL", fmt.Sprintf("START=%v", index), uniqueId)
 	receiveCount := int32(0)
 
