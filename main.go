@@ -44,10 +44,4 @@ func main() {
 
 	fmt.Printf("Download complete: %s\n", fileName)
 	fmt.Printf("SHA-256 checksum : %v\n", checksum)
-
-	//user, err := user.Current()
-	//if err != nil {
-	//	fmt.Println(err)
-	//}
-	//fmt.Println(user)
 }
