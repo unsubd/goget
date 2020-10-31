@@ -7,11 +7,12 @@ import (
 	"goget/logging"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
 func WriteToFile(bytes []byte, fileName string) {
-	file, err := os.OpenFile(fileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	file, err := os.OpenFile(fileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
 		logging.LogError("WRITE_TO_FILE", err, fileName)
 	}
@@ -29,8 +30,7 @@ func AppendToFile(partialFilePath string, finalFilePath string, size constants.S
 		logging.LogError("APPEND_TO_FILE", err, partialFilePath)
 		return err
 	}
-
-	defer os.Remove(partialFilePath)
+	defer file.Close()
 
 	reader := bufio.NewReader(file)
 
@@ -82,6 +82,18 @@ func GetTotalFileSize(pattern string, directoryPath string) (int64, error) {
 	logging.LogDebug("GET_TOTAL_SIZE_SUCCESSFUL", pattern, size)
 
 	return size, nil
+}
+
+func DeleteFiles(baseFileName string) error {
+	files, err := filepath.Glob(baseFileName + "*")
+	if err != nil {
+		return err
+	}
+	for _, file := range files {
+		os.Remove(file)
+	}
+
+	return nil
 }
 
 func GetTempDir() string {

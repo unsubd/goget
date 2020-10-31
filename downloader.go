@@ -14,13 +14,13 @@ import (
 	"sync/atomic"
 )
 
-func DownloadFile(url string, limit constants.Size) (string, error) {
+func DownloadFile(url string, limit constants.Size) (chan int64, string, int64, string, error) {
 	const batchSize = 10 * constants.MegaByte // 10 MB
 	logging.LogDebug("DOWNLOAD STARTING FOR", url)
 	contentLength, err := ioutils.RemoteFileSize(url)
 	logging.LogDebug("CONTENT_LENGTH", fmt.Sprintf("bytes %v", contentLength), fmt.Sprintf("mb %v", contentLength/(1000*1000)))
 	if err != nil {
-		return "", err
+		return nil, "", -1, "", err
 	}
 
 	batches := computeutils.CreateBatches(contentLength, batchSize)
@@ -37,32 +37,28 @@ func DownloadFile(url string, limit constants.Size) (string, error) {
 	baseFileName := fmt.Sprintf("%s%s-%s", temp, fileName, uniqueId)
 
 	dispatchBatches(url, batches, baseFileName, ch, fileName, uniqueId, int(limit/batchSize))
-	trackingChannel, stopChannel := computeutils.Track(uniqueId, temp)
+	trackingChannel, stopChannel := ioutils.Track(uniqueId, temp)
 
 	go func() {
-		for i := range trackingChannel {
-			logging.ConsoleOut(fmt.Sprintf("DOWNLOAD_STATUS %s %s : %f Done", fileName, uniqueId, float64(i)*100/float64(contentLength)))
+		defer ioutils.DeleteFiles(baseFileName)
+		for part := range ch {
+			if strings.Contains(part, "ERROR") {
+				break
+			}
 		}
-		logging.ConsoleOut(fmt.Sprintf("DOWNLOAD COMPLETE: %s Merging!", fileName))
+
+		for i := 0; i < len(batches); i++ {
+			err := ioutils.AppendToFile(fmt.Sprintf("%s-%d", baseFileName, i), fileName, batchSize)
+			if err != nil {
+				logging.LogError("APPEND_TO_FILE", err, fileName, baseFileName)
+			}
+		}
+
+		stopChannel <- true
+		logging.LogDebug("DOWNLOAD_COMPLETE", url, uniqueId)
 	}()
 
-	for part := range ch {
-		if strings.Contains(part, "ERROR") {
-			break
-		}
-	}
-
-	stopChannel <- true
-
-	for i := 0; i < len(batches); i++ {
-		err := ioutils.AppendToFile(fmt.Sprintf("%s-%d", baseFileName, i), fileName, batchSize)
-		if err != nil {
-			logging.LogError("APPEND_TO_FILE", err, fileName, baseFileName)
-		}
-	}
-
-	logging.LogDebug("DOWNLOAD_COMPLETE", url, uniqueId)
-	return fileName, nil
+	return trackingChannel, uniqueId, contentLength, fileName, nil
 }
 
 func dispatchBatches(url string, batches [][]int64, baseFileName string, response chan string, fileName string, uniqueId string, limit int) {

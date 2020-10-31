@@ -3,9 +3,9 @@ package main
 import (
 	"flag"
 	"fmt"
-	"goget/computeutils"
 	"goget/constants"
 	"goget/cryptoutils"
+	"goget/ioutils"
 	"goget/logging"
 	"log"
 	"os"
@@ -32,11 +32,12 @@ func main() {
 		logging.ConsoleOut("URL CANNOT BE EMPTY")
 		log.Fatal("URL CANNOT BE EMPTY")
 	}
-	_, err := DownloadFile(url, size*constants.MegaByte)
+	trackingChannel, uniqueId, contentLength, fileName, err := DownloadFile(url, size*constants.MegaByte)
+	logging.ConsoleOut(uniqueId, contentLength, fileName, err)
+	ioutils.PrintTrack(trackingChannel, uniqueId, fileName, contentLength)
 	if err != nil {
 		logging.ConsoleOut(fmt.Sprintf("MAIN ERROR DOWNLOADING FILE: %v", err))
 	}
-	fileName := computeutils.FileNameFromUrl(url)
 	checksum, err := cryptoutils.FileChecksumSHA256(fileName)
 	if err != nil {
 		log.Fatal(err)
