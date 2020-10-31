@@ -40,4 +40,4 @@ Download complete: pi-billion.txt
 TODO:
 
   1. Download Directories and sub directories
-  2. Add a Tracker for downloads
+  2. ~~Add a Tracker for downloads~~
