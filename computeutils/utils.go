@@ -5,6 +5,9 @@ import (
 )
 
 func FileNameFromUrl(url string) string {
+	if lastIndex := strings.LastIndex(url, "/"); lastIndex == len(url)-1 {
+		url = url[:lastIndex]
+	}
 	return url[strings.LastIndex(url, "/")+1:]
 }
 

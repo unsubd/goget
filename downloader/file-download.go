@@ -13,7 +13,7 @@ import (
 	"sync/atomic"
 )
 
-func Download(url string, limit constants.Size) (chan int64, string, int64, string, error) {
+func Download(url string, limit constants.Size, dir string) (chan int64, string, int64, string, error) {
 	const batchSize = 10 * constants.MegaByte // 10 MB
 	logging.LogDebug("DOWNLOAD STARTING FOR", url)
 	contentLength, err := ioutils.RemoteFileSize(url)
@@ -47,7 +47,7 @@ func Download(url string, limit constants.Size) (chan int64, string, int64, stri
 		}
 
 		for i := 0; i < len(batches); i++ {
-			err := ioutils.AppendToFile(fmt.Sprintf("%s-%d", baseFileName, i), fileName, batchSize)
+			err := ioutils.AppendToFile(fmt.Sprintf("%s-%d", baseFileName, i), fileName, dir, batchSize)
 			if err != nil {
 				logging.LogError("APPEND_TO_FILE", err, fileName, baseFileName)
 			}
@@ -113,7 +113,7 @@ func dispatch(url string, baseFileName string, index int, start int64, end int64
 }
 
 func downloadPartialFile(url string, start int64, end int64, fileName string) error {
-	body, err := ioutils.HttpGet(url, map[string]string{"range": fmt.Sprintf("bytes=%d-%d", start, end)})
+	body, _, _, err := ioutils.HttpRequest("GET", url, map[string]string{"range": fmt.Sprintf("bytes=%d-%d", start, end)}, nil)
 	if err != nil {
 		logging.LogError("HTTP_GET", err, fileName, url)
 		return err
@@ -125,6 +125,6 @@ func downloadPartialFile(url string, start int64, end int64, fileName string) er
 		return err
 	}
 
-	ioutils.WriteToFile(bytes, fileName)
+	ioutils.WriteToFile(bytes, fileName, "")
 	return nil
 }

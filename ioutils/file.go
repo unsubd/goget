@@ -11,8 +11,18 @@ import (
 	"strings"
 )
 
-func WriteToFile(bytes []byte, fileName string) {
-	file, err := os.OpenFile(fileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+func WriteToFile(bytes []byte, fileName string, directory string) {
+	filepath := fileName
+
+	if directory != "" {
+		err := os.MkdirAll(directory, 0777)
+		if err != nil {
+			logging.LogError("CREATE_BASE_DIRECTORY", err, fileName)
+		}
+		filepath = fmt.Sprintf("%s/%s", directory, fileName)
+	}
+
+	file, err := os.OpenFile(filepath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
 		logging.LogError("WRITE_TO_FILE", err, fileName)
 	}
@@ -23,7 +33,7 @@ func WriteToFile(bytes []byte, fileName string) {
 	writer.Write(bytes)
 }
 
-func AppendToFile(partialFilePath string, finalFilePath string, size constants.Size) error {
+func AppendToFile(partialFilePath string, fileName string, directory string, size constants.Size) error {
 	file, err := os.Open(partialFilePath)
 	logging.LogDebug("APPEND_TO_FILE CALLED", partialFilePath)
 	if err != nil {
@@ -38,7 +48,7 @@ func AppendToFile(partialFilePath string, finalFilePath string, size constants.S
 		bytes := make([]byte, size)
 		read, err := reader.Read(bytes)
 		bytes = bytes[:read]
-		WriteToFile(bytes, finalFilePath)
+		WriteToFile(bytes, fileName, directory)
 		if err != nil || read == 0 {
 			break
 		}

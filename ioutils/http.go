@@ -1,11 +1,13 @@
 package ioutils
 
 import (
+	"fmt"
 	"goget/computeutils"
 	"goget/logging"
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 )
 
 func RemoteFileSize(url string) (int64, error) {
@@ -18,11 +20,11 @@ func RemoteFileSize(url string) (int64, error) {
 	return res.ContentLength, nil
 }
 
-func HttpGet(url string, headers map[string]string) (io.ReadCloser, error) {
+func HttpRequest(method string, url string, headers map[string]string, body io.Reader) (io.ReadCloser, string, int64, error) {
 	client := &http.Client{}
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest(method, url, body)
 	if err != nil {
-		return nil, err
+		return nil, "", 0, err
 	}
 
 	for key, value := range headers {
@@ -32,29 +34,40 @@ func HttpGet(url string, headers map[string]string) (io.ReadCloser, error) {
 	res, err := client.Do(req)
 
 	if err != nil {
-		return nil, err
+		return nil, "", 0, err
 	}
 
-	return res.Body, nil
+	return res.Body, res.Header.Get("content-type"), res.ContentLength, nil
 }
 
 func GetDownloadLinks(baseUrl string) ([]string, error) {
+	fmt.Println("called")
 	parsedUrl, err := url.Parse(baseUrl)
 	if err != nil {
 		return nil, err
 	}
 
-	body, err := HttpGet(parsedUrl.String(), nil)
+	body, contentType, _, err := HttpRequest("HEAD", parsedUrl.String(), nil, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	a, err := computeutils.ParseHtml(body)
+	if !strings.Contains(contentType, "text/html") {
+		return []string{baseUrl}, nil
+	}
+
+	body, _, _, err = HttpRequest("GET", parsedUrl.String(), nil, nil)
+
 	if err != nil {
 		return nil, err
 	}
 
-	fileNames := computeutils.ExtractFileNames(a)
+	htmlRootNode, err := computeutils.ParseHtml(body)
+	if err != nil {
+		return nil, err
+	}
+
+	fileNames := computeutils.ExtractFileNames(htmlRootNode)
 
 	var results []string
 	for _, fileName := range fileNames {
