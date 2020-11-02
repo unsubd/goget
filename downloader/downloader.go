@@ -1,4 +1,4 @@
-package main
+package downloader
 
 import (
 	"fmt"
@@ -9,7 +9,6 @@ import (
 	"goget/logging"
 	"io"
 	"io/ioutil"
-	"net/http"
 	"strings"
 	"sync/atomic"
 )
@@ -114,22 +113,13 @@ func dispatch(url string, baseFileName string, index int, start int64, end int64
 }
 
 func downloadPartialFile(url string, start int64, end int64, fileName string) error {
-	client := &http.Client{}
-	req, err := http.NewRequest("GET", url, nil)
-
-	if err != nil {
-		logging.LogError("HTTP_REQUEST", err, fileName, url)
-		return err
-	}
-	req.Header.Set("range", fmt.Sprintf("bytes=%d-%d", start, end))
-	res, err := client.Do(req)
+	body, err := ioutils.HttpGet(url, map[string]string{"range": fmt.Sprintf("bytes=%d-%d", start, end)})
 	if err != nil {
 		logging.LogError("HTTP_GET", err, fileName, url)
 		return err
 	}
-
-	defer res.Body.Close()
-	bytes, err := ioutil.ReadAll(res.Body)
+	defer body.Close()
+	bytes, err := ioutil.ReadAll(body)
 	if err != nil && err != io.EOF {
 		logging.LogError("HTTP_GET_BODY", err, fileName, url)
 		return err
