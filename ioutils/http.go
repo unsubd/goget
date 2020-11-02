@@ -1,9 +1,11 @@
 package ioutils
 
 import (
+	"goget/computeutils"
 	"goget/logging"
 	"io"
 	"net/http"
+	"net/url"
 )
 
 func RemoteFileSize(url string) (int64, error) {
@@ -34,4 +36,33 @@ func HttpGet(url string, headers map[string]string) (io.ReadCloser, error) {
 	}
 
 	return res.Body, nil
+}
+
+func GetDownloadLinks(baseUrl string) ([]string, error) {
+	parsedUrl, err := url.Parse(baseUrl)
+	if err != nil {
+		return nil, err
+	}
+
+	body, err := HttpGet(parsedUrl.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	a, err := computeutils.ParseHtml(body)
+	if err != nil {
+		return nil, err
+	}
+
+	fileNames := computeutils.ExtractFileNames(a)
+
+	var results []string
+	for _, fileName := range fileNames {
+		parse, err := parsedUrl.Parse(fileName)
+		if err == nil {
+			results = append(results, parse.String())
+		}
+	}
+
+	return results, nil
 }

@@ -13,7 +13,7 @@ import (
 	"sync/atomic"
 )
 
-func DownloadFile(url string, limit constants.Size) (chan int64, string, int64, string, error) {
+func Download(url string, limit constants.Size) (chan int64, string, int64, string, error) {
 	const batchSize = 10 * constants.MegaByte // 10 MB
 	logging.LogDebug("DOWNLOAD STARTING FOR", url)
 	contentLength, err := ioutils.RemoteFileSize(url)
