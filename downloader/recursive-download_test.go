@@ -8,7 +8,7 @@ import (
 )
 
 func TestDownloadRecursive(t *testing.T) {
-	ch, err := DownloadRecursive("http://localhost:8000", 100, 500*constants.MegaByte)
+	ch, err := DownloadRecursive("http://localhost:8000", 100, "", 500*constants.MegaByte)
 	if err != nil {
 		t.Fail()
 	}

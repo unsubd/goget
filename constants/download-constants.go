@@ -8,10 +8,12 @@ const (
 	MegaByte      = 1000 * KiloByte
 )
 
-type Status struct {
+type DownloadStatus struct {
 	Id         string
 	Downloaded int64
 	Total      int64
 	FileName   string
 	Error      error
+	Dir        string
+	Op         string
 }

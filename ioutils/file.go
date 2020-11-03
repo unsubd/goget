@@ -2,7 +2,7 @@ package ioutils
 
 import (
 	"bufio"
-	"fmt"
+	"goget/computeutils"
 	"goget/constants"
 	"goget/logging"
 	"io/ioutil"
@@ -19,7 +19,7 @@ func WriteToFile(bytes []byte, fileName string, directory string) {
 		if err != nil {
 			logging.LogError("CREATE_BASE_DIRECTORY", err, fileName)
 		}
-		filepath = fmt.Sprintf("%s/%s", directory, fileName)
+		filepath = computeutils.GetFilePath(directory, fileName)
 	}
 
 	file, err := os.OpenFile(filepath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
@@ -81,7 +81,7 @@ func GetTotalFileSize(pattern string, directoryPath string) (int64, error) {
 	logging.LogDebug("FILE_COUNT", pattern, len(fileNames))
 
 	for _, fileName := range fileNames {
-		stat, err := os.Stat(fmt.Sprintf("%s%s", directoryPath, fileName))
+		stat, err := os.Stat(computeutils.GetFilePath(directoryPath, fileName))
 		if err != nil {
 			logging.LogError("OS_STAT", err, fileName)
 			return -1, err

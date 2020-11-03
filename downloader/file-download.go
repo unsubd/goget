@@ -13,7 +13,14 @@ import (
 	"sync/atomic"
 )
 
-func Download(url string, limit constants.Size, dir string) (chan int64, string, int64, string, error) {
+func Download(url string, limit constants.Size, dir string, temp string) (chan struct {
+	downloaded int64
+	op         string
+}, string, int64, string, error) {
+	fileDownloadTracker := make(chan struct {
+		downloaded int64
+		op         string
+	})
 	const batchSize = 10 * constants.MegaByte // 10 MB
 	logging.LogDebug("DOWNLOAD STARTING FOR", url)
 	contentLength, err := ioutils.RemoteFileSize(url)
@@ -28,24 +35,41 @@ func Download(url string, limit constants.Size, dir string) (chan int64, string,
 	logging.LogDebug("FILE_NAME", fileName, url)
 
 	ch := make(chan string, len(batches))
-	temp := ioutils.GetTempDir()
 	uniqueId := uuid.New().String()
 
 	logging.LogDebug("UUID", uniqueId, url)
-	logging.ConsoleOut("UUID", uniqueId)
-	baseFileName := fmt.Sprintf("%s%s-%s", temp, fileName, uniqueId)
+	baseFileName := fmt.Sprintf("%s-%s", computeutils.GetFilePath(temp, fileName), uniqueId)
 
-	dispatchBatches(url, batches, baseFileName, ch, fileName, uniqueId, int(limit/batchSize))
+	go dispatchBatches(url, batches, baseFileName, ch, fileName, uniqueId, int(limit/batchSize))
 	trackingChannel, stopChannel := ioutils.Track(uniqueId, temp)
 
 	go func() {
+		downloaded := int64(0)
+
+		for i := range trackingChannel {
+			downloaded = i
+			fileDownloadTracker <- struct {
+				downloaded int64
+				op         string
+			}{downloaded: i, op: "DOWNLOADING"}
+		}
+
+		fileDownloadTracker <- struct {
+			downloaded int64
+			op         string
+		}{downloaded: downloaded, op: "APPENDING"}
+
+	}()
+	go func() {
 		defer ioutils.DeleteFiles(baseFileName)
+		defer close(fileDownloadTracker)
 		for part := range ch {
 			if strings.Contains(part, "ERROR") {
 				break
 			}
 		}
 
+		stopChannel <- true
 		for i := 0; i < len(batches); i++ {
 			err := ioutils.AppendToFile(fmt.Sprintf("%s-%d", baseFileName, i), fileName, dir, batchSize)
 			if err != nil {
@@ -53,11 +77,15 @@ func Download(url string, limit constants.Size, dir string) (chan int64, string,
 			}
 		}
 
-		stopChannel <- true
+		fileDownloadTracker <- struct {
+			downloaded int64
+			op         string
+		}{downloaded: contentLength, op: "DONE"}
+
 		logging.LogDebug("DOWNLOAD_COMPLETE", url, uniqueId)
 	}()
 
-	return trackingChannel, uniqueId, contentLength, fileName, nil
+	return fileDownloadTracker, uniqueId, contentLength, fileName, nil
 }
 
 func dispatchBatches(url string, batches [][]int64, baseFileName string, response chan string, fileName string, uniqueId string, limit int) {

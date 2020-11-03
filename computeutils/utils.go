@@ -1,6 +1,7 @@
 package computeutils
 
 import (
+	"fmt"
 	"strings"
 )
 
@@ -31,4 +32,11 @@ func CreateBatches(limit int64, size int64) [][]int64 {
 	}
 
 	return batches
+}
+
+func GetFilePath(dir string, fileName string) string {
+	if dir[len(dir)-1] == '/'|'\\' {
+		dir = dir[0 : len(dir)-1]
+	}
+	return fmt.Sprintf("%s/%s", dir, fileName)
 }
