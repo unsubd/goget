@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"goget/constants"
-	"goget/cryptoutils"
 	"goget/downloader"
 	"goget/ioutils"
 	"goget/logging"
@@ -28,21 +27,25 @@ func main() {
 
 	var url string
 	flag.StringVar(&url, "url", "", "URL to download")
+
+	var recursionDepth int
+	flag.IntVar(&recursionDepth, "r", 1, "Recursion Depth")
+
 	flag.Parse()
 	if url == "" {
 		logging.ConsoleOut("URL CANNOT BE EMPTY")
 		log.Fatal("URL CANNOT BE EMPTY")
 	}
-	trackingChannel, uniqueId, contentLength, fileName, err := downloader.Download(url, size*constants.MegaByte, ".")
-	ioutils.PrintTrack(trackingChannel, uniqueId, fileName, contentLength)
+
+	statusChannel, err := downloader.DownloadRecursive(url, recursionDepth, size*constants.MegaByte)
+
+	if err3 != nil {
+
+	}
+
+	ioutils.PrintTrack(statusChannel)
+
 	if err != nil {
 		logging.ConsoleOut(fmt.Sprintf("MAIN ERROR DOWNLOADING FILE: %v", err))
 	}
-	checksum, err := cryptoutils.FileChecksumSHA256(fileName)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Printf("Download complete: %s\n", fileName)
-	fmt.Printf("SHA-256 checksum : %v\n", checksum)
 }

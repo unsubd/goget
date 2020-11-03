@@ -1,7 +1,6 @@
 package ioutils
 
 import (
-	"fmt"
 	"goget/computeutils"
 	"goget/logging"
 	"io"
@@ -41,7 +40,6 @@ func HttpRequest(method string, url string, headers map[string]string, body io.R
 }
 
 func GetDownloadLinks(baseUrl string) ([]string, error) {
-	fmt.Println("called")
 	parsedUrl, err := url.Parse(baseUrl)
 	if err != nil {
 		return nil, err

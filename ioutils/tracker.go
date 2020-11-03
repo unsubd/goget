@@ -1,7 +1,7 @@
 package ioutils
 
 import (
-	"fmt"
+	"goget/constants"
 	"goget/logging"
 	"time"
 )
@@ -34,10 +34,10 @@ func Track(uniqueId string, directoryPath string) (chan int64, chan bool) {
 	return ch, stopChannel
 }
 
-func PrintTrack(trackingChannel chan int64, uniqueId string, fileName string, contentLength int64) {
+func PrintTrack(trackingChannel chan constants.Status) {
 	for i := range trackingChannel {
-		logging.ConsoleOut(fmt.Sprintf("DOWNLOAD_STATUS %s %s : %f Done", fileName, uniqueId, float64(i)*100/float64(contentLength)))
+		logging.ConsoleOut(i)
 	}
 
-	logging.ConsoleOut("\nDOWNLOAD_COMPLETE", fileName, uniqueId)
+	logging.ConsoleOut("\nDOWNLOAD_COMPLETE")
 }

@@ -8,16 +8,8 @@ import (
 	"strings"
 )
 
-type Status struct {
-	id         string
-	downloaded int64
-	total      int64
-	fileName   string
-	error      error
-}
-
-func DownloadRecursive(url string, depth int, limit constants.Size) (chan Status, error) {
-	ch := make(chan Status)
+func DownloadRecursive(url string, depth int, limit constants.Size) (chan constants.Status, error) {
+	ch := make(chan constants.Status)
 
 	go func() {
 		var rec func(string, int, string)
@@ -44,22 +36,22 @@ func DownloadRecursive(url string, depth int, limit constants.Size) (chan Status
 	return ch, nil
 }
 
-func processLinks(links []string, limit constants.Size, response chan Status, dir string) []string {
+func processLinks(links []string, limit constants.Size, response chan constants.Status, dir string) []string {
 	var directories []string
 	for _, link := range links {
 		_, contentType, _, err := ioutils.HttpRequest("HEAD", link, nil, nil)
 		if err != nil {
-			response <- Status{error: err}
+			response <- constants.Status{Error: err}
 		}
 
 		if !strings.Contains(contentType, "text/html") {
 			trackingChannel, uniqueId, contentLength, fileName, err := Download(link, limit, dir)
 			for downloadedSize := range trackingChannel {
-				response <- Status{downloaded: downloadedSize,
-					id:       uniqueId,
-					total:    contentLength,
-					fileName: fileName,
-					error:    err,
+				response <- constants.Status{Downloaded: downloadedSize,
+					Id:       uniqueId,
+					Total:    contentLength,
+					FileName: fileName,
+					Error:    err,
 				}
 			}
 		} else {
