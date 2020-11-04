@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/nsf/termbox-go"
 	"goget/computeutils"
 	"goget/constants"
 	"goget/downloader"
@@ -30,8 +29,6 @@ func main() {
 		ioutils.ConsoleOutLn("URL CANNOT BE EMPTY")
 		log.Fatal("URL CANNOT BE EMPTY")
 	}
-
-	termbox.Init()
 
 	logDir := computeutils.GetFilePath(outputDirectory, "logs")
 	err3 := os.MkdirAll(logDir, 0777)
