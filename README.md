@@ -16,5 +16,5 @@ Command Line options:
   4. `-r` : Recursion Depth to be used in case of downloading an Index. If the depth = 2, the current list of files and files one level down will be downloaded.
   5. `-o` : Output Directory. If the directory does not exist, it will be created.
 
-###### Demo
+###### Demo (downloading a deep index)
 ![](Demo-new.gif)
