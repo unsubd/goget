@@ -10,4 +10,4 @@ Usage:
 `$ ./goget -m=100 -url=https://stuff.mit.edu/afs/sipb/contrib/pi/pi-billion.txt`
 
 ###### Demo
-![](Demo.gif)
+![](Demo-new.gif)
