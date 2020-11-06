@@ -9,6 +9,7 @@ import (
 	"goget/logging"
 	"io"
 	"io/ioutil"
+	"os"
 	"strings"
 	"sync/atomic"
 )
@@ -49,6 +50,23 @@ func Download(url string, limit constants.Size, dir string, temp string, resume 
 		}
 	}
 	baseFileName := fmt.Sprintf("%s-%s", computeutils.GetFilePath(temp, fileName), uniqueId)
+	_, err = os.Stat(computeutils.GetFilePath(dir, fileName))
+	filePresent := false
+	if _, err := os.Stat(computeutils.GetFilePath(dir, fileName)); os.IsNotExist(err) {
+		filePresent = true
+	}
+
+	if filePresent && resume {
+		defer close(fileDownloadTracker)
+		defer func() {
+			fileDownloadTracker <- struct {
+				downloaded int64
+				op         string
+			}{downloaded: contentLength, op: "DONE"}
+		}()
+		return fileDownloadTracker, uniqueId, contentLength, fileName, nil
+	}
+
 	go dispatchBatches(url, batches, baseFileName, ch, skips, fileName, uniqueId, int(limit/batchSize))
 	trackingChannel, stopChannel := ioutils.Track(uniqueId, temp)
 
@@ -70,7 +88,7 @@ func Download(url string, limit constants.Size, dir string, temp string, resume 
 
 	}()
 	go func() {
-		//defer ioutils.DeleteFiles(baseFileName)
+		defer ioutils.DeleteFiles(baseFileName)
 		defer close(fileDownloadTracker)
 		for part := range ch {
 			if strings.Contains(part, "ERROR") {
