@@ -59,5 +59,16 @@ func printStatus(status constants.DownloadStatus) {
 	percentCompletion := (float64(status.Downloaded) * 100.0) / float64(status.Total)
 	currentOperation := status.Op
 	message := fmt.Sprintf("%s %0.2f %s", filePath, percentCompletion, currentOperation)
-	ConsoleOut(message)
+	loop(message)
+}
+
+func loop(message string) {
+	symbols := []string{"|", "/", "|", "\\"}
+	count := 5
+	for i := 0; i < count; i++ {
+		for j := 0; j < len(symbols); j++ {
+			ConsoleOut(fmt.Sprintf("%s  %s", message, symbols[j]))
+			time.Sleep(50 * time.Millisecond)
+		}
+	}
 }
