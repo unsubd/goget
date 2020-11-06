@@ -51,20 +51,19 @@ func Download(url string, limit constants.Size, dir string, temp string, resume 
 	}
 	baseFileName := fmt.Sprintf("%s-%s", computeutils.GetFilePath(temp, fileName), uniqueId)
 	_, err = os.Stat(computeutils.GetFilePath(dir, fileName))
-	filePresent := false
-	if _, err := os.Stat(computeutils.GetFilePath(dir, fileName)); os.IsNotExist(err) {
-		filePresent = true
+	filePresent := true
+	if stat, err := os.Stat(computeutils.GetFilePath(dir, fileName)); os.IsNotExist(err) {
+		filePresent = false
+	} else {
+		filePresent = contentLength == stat.Size()
+		if !filePresent {
+			ioutils.DeleteFiles(computeutils.GetFilePath(dir, fileName))
+		}
 	}
 
 	if filePresent && resume {
 		defer close(fileDownloadTracker)
-		defer func() {
-			fileDownloadTracker <- struct {
-				downloaded int64
-				op         string
-			}{downloaded: contentLength, op: "DONE"}
-		}()
-		return fileDownloadTracker, uniqueId, contentLength, fileName, nil
+		return fileDownloadTracker, uniqueId, contentLength, fileName, os.ErrExist
 	}
 
 	go dispatchBatches(url, batches, baseFileName, ch, skips, fileName, uniqueId, int(limit/batchSize))
