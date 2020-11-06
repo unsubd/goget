@@ -62,20 +62,9 @@ func AppendToFile(partialFilePath string, fileName string, directory string, siz
 func GetTotalFileSize(pattern string, directoryPath string) (int64, error) {
 	logging.LogDebug("GET_TOTAL_SIZE", pattern)
 	var size int64
-	files, err := ioutil.ReadDir(directoryPath)
-
-	if err != nil {
-		logging.LogError("GET_TOTAL_SIZE", err, pattern)
-		return -1, err
-	}
-
-	var fileNames []string
-
-	for _, file := range files {
-		fileName := file.Name()
-		if strings.Contains(fileName, pattern) {
-			fileNames = append(fileNames, fileName)
-		}
+	fileNames, err2 := GetFilesFromPattern(pattern, directoryPath)
+	if err2 != nil {
+		return -1, err2
 	}
 
 	logging.LogDebug("FILE_COUNT", pattern, len(fileNames))
@@ -92,6 +81,25 @@ func GetTotalFileSize(pattern string, directoryPath string) (int64, error) {
 	logging.LogDebug("GET_TOTAL_SIZE_SUCCESSFUL", pattern, size)
 
 	return size, nil
+}
+
+func GetFilesFromPattern(pattern string, directoryPath string) ([]string, error) {
+	files, err := ioutil.ReadDir(directoryPath)
+
+	if err != nil {
+		logging.LogError("GET_FILES_FROM_PATTERN", err, pattern)
+		return nil, err
+	}
+
+	var fileNames []string
+
+	for _, file := range files {
+		fileName := file.Name()
+		if strings.Contains(fileName, pattern) {
+			fileNames = append(fileNames, fileName)
+		}
+	}
+	return fileNames, nil
 }
 
 func DeleteFiles(baseFileName string) error {

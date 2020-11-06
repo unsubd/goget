@@ -24,6 +24,9 @@ func main() {
 	var outputDirectory string
 	flag.StringVar(&outputDirectory, "o", ".", "Output Directory")
 
+	var resume bool
+	flag.BoolVar(&resume, "resume", false, "Output Directory")
+
 	flag.Parse()
 	if url == "" {
 		ioutils.ConsoleOutLn("URL CANNOT BE EMPTY")
@@ -42,7 +45,7 @@ func main() {
 
 	log.SetOutput(logFile)
 
-	statusChannel, err := downloader.DownloadRecursive(url, recursionDepth, outputDirectory, size*constants.MegaByte)
+	statusChannel, err := downloader.DownloadRecursive(url, recursionDepth, outputDirectory, size*constants.MegaByte, resume)
 
 	ioutils.PrintTrack(statusChannel)
 

@@ -1,8 +1,6 @@
 package downloader
 
 import (
-	"fmt"
-	"github.com/google/uuid"
 	"goget/computeutils"
 	"goget/constants"
 	"goget/ioutils"
@@ -11,7 +9,7 @@ import (
 	"strings"
 )
 
-func DownloadRecursive(url string, depth int, directory string, limit constants.Size) (chan constants.DownloadStatus, error) {
+func DownloadRecursive(url string, depth int, directory string, limit constants.Size, resume bool) (chan constants.DownloadStatus, error) {
 	ch := make(chan constants.DownloadStatus)
 
 	go func() {
@@ -19,23 +17,23 @@ func DownloadRecursive(url string, depth int, directory string, limit constants.
 		defer close(ch)
 		baseDirectory := directory
 		tempDirectory := ioutils.GetTempDir()
-		downloadId := uuid.New().String()
 
 		if baseDirectory != "." {
-			tempDirectory = computeutils.GetFilePath(baseDirectory, fmt.Sprintf("temp%s", downloadId))
+			tempDirectory = computeutils.GetFilePath(baseDirectory, "temp")
 			err := os.MkdirAll(tempDirectory, 0777)
 			if err != nil {
 				logging.LogError(err)
 				tempDirectory = ioutils.GetTempDir()
 			}
 		}
-		logging.LogDebug("Temp Directory", tempDirectory, downloadId)
+
+		logging.LogDebug("Temp Directory", tempDirectory)
 
 		rec = func(url string, depth int, baseDirectory string) {
 
 			if depth > 0 {
 				links, _ := ioutils.GetDownloadLinks(url)
-				directories := processLinks(links, limit, ch, baseDirectory, tempDirectory)
+				directories := processLinks(links, limit, ch, baseDirectory, tempDirectory, resume)
 				depth--
 				for _, directoryUrl := range directories {
 					rec(directoryUrl, depth, computeutils.GetFilePath(baseDirectory, computeutils.FileNameFromUrl(url)))
@@ -51,7 +49,7 @@ func DownloadRecursive(url string, depth int, directory string, limit constants.
 	return ch, nil
 }
 
-func processLinks(links []string, limit constants.Size, response chan constants.DownloadStatus, dir string, tempDirectory string) []string {
+func processLinks(links []string, limit constants.Size, response chan constants.DownloadStatus, dir string, tempDirectory string, resume bool) []string {
 	var directories []string
 	for _, link := range links {
 		_, contentType, _, err := ioutils.HttpRequest("HEAD", link, nil, nil)
@@ -60,7 +58,7 @@ func processLinks(links []string, limit constants.Size, response chan constants.
 		}
 
 		if !strings.Contains(contentType, "text/html") {
-			trackingChannel, uniqueId, contentLength, fileName, err := Download(link, limit, dir, tempDirectory)
+			trackingChannel, uniqueId, contentLength, fileName, err := Download(link, limit, dir, tempDirectory, resume)
 			for s := range trackingChannel {
 				response <- constants.DownloadStatus{Downloaded: s.downloaded,
 					Id:       uniqueId,

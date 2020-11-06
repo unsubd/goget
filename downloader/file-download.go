@@ -13,7 +13,7 @@ import (
 	"sync/atomic"
 )
 
-func Download(url string, limit constants.Size, dir string, temp string) (chan struct {
+func Download(url string, limit constants.Size, dir string, temp string, resume bool) (chan struct {
 	downloaded int64
 	op         string
 }, string, int64, string, error) {
@@ -38,9 +38,18 @@ func Download(url string, limit constants.Size, dir string, temp string) (chan s
 	uniqueId := uuid.New().String()
 
 	logging.LogDebug("UUID", uniqueId, url)
+	skips := make(map[int]bool)
+	id := ""
+	if resume {
+		fileNames, _ := ioutils.GetFilesFromPattern(fileName, temp)
+		skips, id = computeutils.ExtractResumeMetaData(fileNames, fileName, temp, batchSize)
+		if id != "" {
+			uniqueId = id
+			fmt.Println("Resuming", uniqueId, len(skips))
+		}
+	}
 	baseFileName := fmt.Sprintf("%s-%s", computeutils.GetFilePath(temp, fileName), uniqueId)
-
-	go dispatchBatches(url, batches, baseFileName, ch, fileName, uniqueId, int(limit/batchSize))
+	go dispatchBatches(url, batches, baseFileName, ch, skips, fileName, uniqueId, int(limit/batchSize))
 	trackingChannel, stopChannel := ioutils.Track(uniqueId, temp)
 
 	go func() {
@@ -61,7 +70,7 @@ func Download(url string, limit constants.Size, dir string, temp string) (chan s
 
 	}()
 	go func() {
-		defer ioutils.DeleteFiles(baseFileName)
+		//defer ioutils.DeleteFiles(baseFileName)
 		defer close(fileDownloadTracker)
 		for part := range ch {
 			if strings.Contains(part, "ERROR") {
@@ -88,37 +97,48 @@ func Download(url string, limit constants.Size, dir string, temp string) (chan s
 	return fileDownloadTracker, uniqueId, contentLength, fileName, nil
 }
 
-func dispatchBatches(url string, batches [][]int64, baseFileName string, response chan string, fileName string, uniqueId string, limit int) {
+func dispatchBatches(url string, batches [][]int64, baseFileName string, response chan string, skips map[int]bool, fileName string, uniqueId string, limit int) {
 	dispatchChannel := make(chan string)
 	logging.LogDebug("DISPATCH", fmt.Sprintf("LIMIT=%v", limit), uniqueId)
 	count := 0
-	for ; count < limit && count < len(batches); count++ {
-		dispatch(url, baseFileName, count, batches[count][0], batches[count][1], dispatchChannel, fileName)
+	start := 0
+	remaining := int32(len(batches)) - int32(len(skips))
+
+	for index := 0; count < limit && index < len(batches); index++ {
+		_, ok := skips[index]
+		if !ok {
+			dispatch(url, baseFileName, index, batches[index][0], batches[index][1], dispatchChannel, fileName)
+			skips[index] = true
+			count++
+		}
+		start = index
 	}
 
-	index := int32(count)
+	index := int32(start + 1)
 	logging.LogDebug("DISPATCH_PARTIAL", fmt.Sprintf("START=%v", index), uniqueId)
-	receiveCount := int32(0)
 
 	go func() {
 		defer close(response)
 		defer close(dispatchChannel)
 	loop:
-		for true {
-			select {
-			case filePart := <-dispatchChannel:
-				response <- filePart
-				if index < int32(len(batches)) {
-					logging.LogDebug("DISPATCH_PARTIAL", index, uniqueId)
+		for remaining > 0 {
+			filePart := <-dispatchChannel
+			response <- filePart
+			atomic.AddInt32(&remaining, -1)
+			if remaining <= 0 || strings.Contains(filePart, "ERROR") {
+				logging.LogDebug("DISPATCH_DONE", uniqueId)
+				break loop
+			}
+
+			if index < int32(len(batches)) {
+				logging.LogDebug("DISPATCH_PARTIAL", index, uniqueId)
+				_, ok := skips[int(index)]
+				if !ok {
 					dispatch(url, baseFileName, int(index), batches[index][0], batches[index][1], dispatchChannel, fileName)
 				}
-				atomic.AddInt32(&index, 1)
-				atomic.AddInt32(&receiveCount, 1)
-				if receiveCount >= int32(len(batches)) || strings.Contains(filePart, "ERROR") {
-					logging.LogDebug("DISPATCH_DONE", uniqueId)
-					break loop
-				}
 			}
+
+			atomic.AddInt32(&index, 1)
 		}
 
 	}()
