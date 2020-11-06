@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"goget/computeutils"
 	"goget/constants"
+	"goget/cryptoutils"
 	"goget/downloader"
 	"goget/ioutils"
 	"log"
@@ -47,7 +48,13 @@ func main() {
 
 	statusChannel, err := downloader.DownloadRecursive(url, recursionDepth, outputDirectory, size*constants.MegaByte, resume)
 
-	ioutils.PrintTrack(statusChannel)
+	ioutils.PrintTrack(statusChannel, func(status constants.DownloadStatus) {
+		filePath := computeutils.GetFilePath(status.Dir, status.FileName)
+		sha256, _ := cryptoutils.FileChecksumSHA256(filePath)
+		line := fmt.Sprintf("%s,%s,%d\n", filePath, sha256, status.Downloaded)
+
+		ioutils.WriteToFile([]byte(line), "meta", status.Dir)
+	})
 
 	if err != nil {
 		ioutils.ConsoleOutLn(fmt.Sprintf("ERROR WHILE DOWNLOADING FILE %v", err))

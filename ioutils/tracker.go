@@ -36,19 +36,20 @@ func Track(uniqueId string, directoryPath string) (chan int64, chan bool) {
 	return ch, stopChannel
 }
 
-func PrintTrack(trackingChannel chan constants.DownloadStatus) {
-	lineNumbers := make(map[string]int)
-	count := 0
+func PrintTrack(trackingChannel chan constants.DownloadStatus, doneCallback func(status constants.DownloadStatus)) {
+	downloaded := make(map[string]bool)
 	for i := range trackingChannel {
-		_, ok := lineNumbers[i.Id]
+		_, ok := downloaded[i.Id]
 		if !ok {
 			NewLine()
-			lineNumbers[i.Id] = count
-			count++
+			downloaded[i.Id] = true
 		} else {
 			goToStart()
 		}
 		printStatus(i)
+		if i.Op == "DONE" {
+			doneCallback(i)
+		}
 	}
 	NewLine()
 	ConsoleOut("Download Complete!")
@@ -59,7 +60,7 @@ func printStatus(status constants.DownloadStatus) {
 	percentCompletion := (float64(status.Downloaded) * 100.0) / float64(status.Total)
 	currentOperation := status.Op
 	message := fmt.Sprintf("%s %0.2f %s", filePath, percentCompletion, currentOperation)
-	loop(message)
+	ConsoleOut(message)
 }
 
 func loop(message string) {
