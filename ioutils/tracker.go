@@ -59,7 +59,7 @@ func printStatus(status constants.DownloadStatus) {
 	filePath := computeutils.GetFilePath(status.Dir, status.FileName)
 	percentCompletion := (float64(status.Downloaded) * 100.0) / float64(status.Total)
 	currentOperation := status.Op
-	message := fmt.Sprintf("%s %0.2f %s", filePath, percentCompletion, currentOperation)
+	message := fmt.Sprintf("%s %0.2f %d/%d %s", filePath, percentCompletion, status.Downloaded, status.Total, currentOperation)
 	ConsoleOut(message)
 }
 
