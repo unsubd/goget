@@ -1,4 +1,4 @@
-# goget
+# GoGet
 Download stuff over HTTP with ease.
 
 The idea is to have one command line tool to help me download an entire index of files, if need be.
