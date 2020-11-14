@@ -20,3 +20,8 @@ Once the download is complete, the tool computes checksums, bytes downloaded and
 
 ###### Demo (downloading a deep index)
 ![](Demo-new.gif)
+
+Use [File Server](https://github.com/unsubd/scripts/blob/main/server.go) to serve a directory.
+
+
+###### Note, if you are serving a directory on another machine, make sure that you are on the same network and the IP address is correct and the Port is accessible.
