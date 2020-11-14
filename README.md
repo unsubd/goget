@@ -1,5 +1,5 @@
 # goget
-Download stuff from the internet with ease.
+Download stuff over HTTP with ease.
 
 The idea is to have one command line tool to help me download an entire index of files, if need be.
 
@@ -15,6 +15,8 @@ Command Line options:
   3. `-resume` : Resume a download if possible. `-resume=true`
   4. `-r` : Recursion Depth to be used in case of downloading an Index. If the depth = 2, the current list of files and files one level down will be downloaded.
   5. `-o` : Output Directory. If the directory does not exist, it will be created.
+
+Once the download is complete, the tool computes checksums, bytes downloaded and stores them in a file named `meta` in your output directory.
 
 ###### Demo (downloading a deep index)
 ![](Demo-new.gif)
